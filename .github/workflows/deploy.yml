@@ -28,3 +28,7 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # Prevents wrangler v4 from auto-detecting open-next.config.ts and
+          # re-invoking opennextjs-cloudflare deploy (which requires a local
+          # Hyperdrive connection string that doesn't exist in CI).
+          OPEN_NEXT_DEPLOY: "true"
