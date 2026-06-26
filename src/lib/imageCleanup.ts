@@ -1,6 +1,5 @@
 import { prisma } from "./prisma";
 import { deleteFromR2 } from "./r2";
-import { deleteFromGCS } from "./gcs";
 
 function isStorageUrl(url: unknown): url is string {
   if (typeof url !== "string") return false;
@@ -14,6 +13,7 @@ async function deleteStorageFile(url: string): Promise<void> {
   if (r2Base && url.startsWith(r2Base + "/")) {
     await deleteFromR2(url);
   } else {
+    const { deleteFromGCS } = await import("./gcs");
     await deleteFromGCS(url);
   }
 }

@@ -1,5 +1,5 @@
-name = "ngritics"
-compatibility_date = "2025-06-01"
+name = "nogaritics"
+compatibility_date = "2026-06-01"
 compatibility_flags = ["nodejs_compat"]
 main = ".open-next/worker.js"
 

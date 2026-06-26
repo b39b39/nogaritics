@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { uploadToR2 } from "@/lib/r2";
-import { uploadToGCS } from "@/lib/gcs";
 import { v4 as uuidv4 } from "uuid";
 import type { ImageCategory } from "@/lib/r2";
 
@@ -32,10 +31,13 @@ export async function POST(req: NextRequest) {
   const filename = `${uuidv4()}.${ext}`;
   const buffer = Buffer.from(await file.arrayBuffer());
 
-  // Use R2 when configured, fall back to GCS for local dev
-  const url = process.env.R2_ACCOUNT_ID
-    ? await uploadToR2(buffer, filename, category, file.type)
-    : await uploadToGCS(buffer, filename, category, file.type);
+  let url: string;
+  if (process.env.R2_ACCOUNT_ID) {
+    url = await uploadToR2(buffer, filename, category, file.type);
+  } else {
+    const { uploadToGCS } = await import("@/lib/gcs");
+    url = await uploadToGCS(buffer, filename, category, file.type);
+  }
 
   return NextResponse.json({ url });
 }
