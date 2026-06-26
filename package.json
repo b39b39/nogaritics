@@ -8,8 +8,9 @@
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
-    "deploy": "opennextjs-cloudflare build && wrangler deploy",
-    "build:cf": "opennextjs-cloudflare build"
+    "deploy": "opennextjs-cloudflare build && OPEN_NEXT_DEPLOY=true wrangler deploy",
+    "build:cf": "opennextjs-cloudflare build",
+    "deploy:cf": "OPEN_NEXT_DEPLOY=true wrangler deploy"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
