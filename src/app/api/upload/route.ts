@@ -31,13 +31,7 @@ export async function POST(req: NextRequest) {
   const filename = `${uuidv4()}.${ext}`;
   const buffer = Buffer.from(await file.arrayBuffer());
 
-  let url: string;
-  if (process.env.R2_ACCOUNT_ID) {
-    url = await uploadToR2(buffer, filename, category, file.type);
-  } else {
-    const { uploadToGCS } = await import("@/lib/gcs");
-    url = await uploadToGCS(buffer, filename, category, file.type);
-  }
+  const url = await uploadToR2(buffer, filename, category, file.type);
 
   return NextResponse.json({ url });
 }
