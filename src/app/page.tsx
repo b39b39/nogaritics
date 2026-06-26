@@ -1,65 +1,88 @@
-import Image from "next/image";
+import Link from "next/link";
+import { prisma } from "@/lib/prisma";
+import { getAlbums, getTracks } from "@/lib/queries";
+import { TrackCard } from "@/components/music/TrackCard";
+import { AlbumCard } from "@/components/music/AlbumCard";
+import { BarChart3, Music, Disc, Users } from "lucide-react";
 
-export default function Home() {
+export default async function HomePage() {
+  const [{ items: recentTracks }, { items: recentAlbums }, counts] = await Promise.all([
+    getTracks({ sortBy: "recently", sortOrder: "desc", pageSize: 10, page: 1 }),
+    getAlbums({ sortBy: "recently", sortOrder: "desc", pageSize: 10, page: 1 }),
+    prisma.$transaction([
+      prisma.track.count(),
+      prisma.album.count(),
+      prisma.artist.count(),
+      prisma.rate.count({ where: { score: { not: null } } }),
+    ]),
+  ]);
+
+  const [trackCount, albumCount, artistCount, rateCount] = counts;
+  const recentAlbums5 = recentAlbums.slice(0, 5);
+  const recentTracks5 = recentTracks.slice(0, 5);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="space-y-10">
+      {/* Stats bar */}
+      <section className="flex flex-wrap items-center gap-x-6 gap-y-1.5 py-3 border-b border-gray-200 text-sm text-gray-600">
+        <StatItem icon={<Music className="w-4 h-4" />} label="Tracks" value={trackCount} />
+        <StatItem icon={<Disc className="w-4 h-4" />} label="Albums" value={albumCount} />
+        <StatItem icon={<Users className="w-4 h-4" />} label="Artists" value={artistCount} />
+        <StatItem icon={<BarChart3 className="w-4 h-4" />} label="Ratings" value={rateCount} />
+        <span className="text-gray-400 text-xs">— items registered in the database</span>
+      </section>
+
+      {/* Recent Albums */}
+      <section>
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-xl font-bold text-gray-900">Recent Albums</h2>
+          <Link href="/albums" className="text-sm text-indigo-600 hover:underline">View all →</Link>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        {recentAlbums5.length === 0 ? (
+          <EmptyState message="No albums added yet." />
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-5">
+            {recentAlbums5.map((album) => (
+              <AlbumCard key={album.id} album={album} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Recent Tracks */}
+      <section>
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-xl font-bold text-gray-900">Recent Tracks</h2>
+          <Link href="/tracks" className="text-sm text-indigo-600 hover:underline">View all →</Link>
         </div>
-      </main>
+        {recentTracks5.length === 0 ? (
+          <EmptyState message="No tracks added yet." />
+        ) : (
+          <div className="space-y-3">
+            {recentTracks5.map((track) => (
+              <TrackCard key={track.id} track={track} />
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function StatItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="text-indigo-500">{icon}</span>
+      <span className="font-semibold text-gray-900">{value.toLocaleString()}</span>
+      <span className="text-gray-500">{label}</span>
+    </div>
+  );
+}
+
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="text-center py-12 text-gray-400 bg-white rounded-xl border border-dashed border-gray-200">
+      {message}
     </div>
   );
 }

@@ -1,0 +1,254 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── NextAuth.js v5 Required Models ────────────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── Application Models ─────────────────────────────────────────────────────
+
+enum UserRole {
+  USER
+  EDITOR
+  ADMIN
+}
+
+model User {
+  id             String    @id @default(cuid())
+  discordId      String?   @unique
+  name           String?
+  email          String?   @unique
+  image          String?
+  banner         String?
+  username       String?   @unique
+  blockColor     String?
+  blockTextColor String?
+  role           UserRole  @default(USER)
+  accounts       Account[]
+  sessions       Session[]
+  rates          Rate[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+enum ArtistRole {
+  MAIN
+  FEAT
+  PROD
+}
+
+model Artist {
+  id              String         @id @default(cuid())
+  name            String
+  aliases         String[]
+  isGroup         Boolean        @default(false)
+  nation          String?
+  image           String?
+  banner          String?
+  itunesArtistId  String?        @unique
+  xUrl            String?
+  instagramUrl    String?
+  youtubeUrl      String?
+  soundcloudUrl   String?
+  appleMusicUrl   String?
+  youtubeMusicUrl String?
+  tags            ArtistTag[]
+  trackRoles      TrackArtist[]
+  albumRoles      AlbumArtist[]
+  memberEntries   ArtistMember[] @relation("GroupArtists")
+  groupEntries    ArtistMember[] @relation("MemberOfGroups")
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model ArtistMember {
+  groupId  String
+  memberId String
+  group    Artist @relation("GroupArtists", fields: [groupId], references: [id], onDelete: Cascade)
+  member   Artist @relation("MemberOfGroups", fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, memberId])
+}
+
+model Track {
+  id              String        @id @default(cuid())
+  name            String
+  aliases         String[]
+  albumId         String?
+  album           Album?        @relation(fields: [albumId], references: [id])
+  artists         TrackArtist[]
+  tags            TrackTag[]
+  image           String?
+  publishedYear   Int?
+  publishedMonth  Int?
+  publishedDay    Int?
+  trackNumber     Int?
+  itunesTrackId   String?       @unique
+  youtubeUrl      String?
+  youtubeMusicUrl String?
+  appleMusicUrl   String?
+  soundcloudUrl   String?
+  rates           Rate[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model Album {
+  id              String        @id @default(cuid())
+  name            String
+  aliases         String[]
+  tracks          Track[]
+  artists         AlbumArtist[]
+  tags            AlbumTag[]
+  image           String?
+  publishedYear   Int?
+  publishedMonth  Int?
+  publishedDay    Int?
+  itunesAlbumId   String?       @unique
+  youtubeUrl      String?
+  youtubeMusicUrl String?
+  appleMusicUrl   String?
+  soundcloudUrl   String?
+  rates           Rate[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model TrackArtist {
+  id             String     @id @default(cuid())
+  trackId        String
+  artistId       String
+  role           ArtistRole
+  note           String?
+  showInOverview Boolean    @default(true)
+  track          Track      @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  artist         Artist     @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@unique([trackId, artistId, role])
+}
+
+model AlbumArtist {
+  id             String     @id @default(cuid())
+  albumId        String
+  artistId       String
+  role           ArtistRole
+  note           String?
+  showInOverview Boolean    @default(true)
+  album          Album      @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  artist         Artist     @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@unique([albumId, artistId, role])
+}
+
+model Tag {
+  id        String      @id @default(cuid())
+  name      String      @unique
+  parentId  String?
+  parent    Tag?        @relation("TagHierarchy", fields: [parentId], references: [id])
+  children  Tag[]       @relation("TagHierarchy")
+  siblingsA TagSibling[] @relation("SiblingA")
+  siblingsB TagSibling[] @relation("SiblingB")
+  tracks    TrackTag[]
+  albums    AlbumTag[]
+  artists   ArtistTag[]
+}
+
+// Sibling edges stored once with tagAId < tagBId (undirected)
+model TagSibling {
+  tagAId String
+  tagBId String
+  tagA   Tag    @relation("SiblingA", fields: [tagAId], references: [id], onDelete: Cascade)
+  tagB   Tag    @relation("SiblingB", fields: [tagBId], references: [id], onDelete: Cascade)
+
+  @@id([tagAId, tagBId])
+}
+
+model TrackTag {
+  trackId String
+  tagId   String
+  track   Track  @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  tag     Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([trackId, tagId])
+}
+
+model AlbumTag {
+  albumId String
+  tagId   String
+  album   Album  @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  tag     Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([albumId, tagId])
+}
+
+model ArtistTag {
+  artistId String
+  tagId    String
+  artist   Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  tag      Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([artistId, tagId])
+}
+
+// Rate: score/comment/starred — all optional individually, but at least one must be set
+// starred can exist alone (star-only, no score/comment)
+model Rate {
+  id        String   @id @default(cuid())
+  userId    String
+  trackId   String?
+  albumId   String?
+  score     Float?   // 0.00–5.00; null means star-only
+  comment   String?  @db.Text
+  starred   Boolean  @default(false)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track     Track?   @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  album     Album?   @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, trackId])
+  @@unique([userId, albumId])
+  @@index([trackId])
+  @@index([albumId])
+  @@index([userId])
+}
