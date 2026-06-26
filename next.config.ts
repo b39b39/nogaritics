@@ -5,6 +5,10 @@ const r2Hostname = process.env.R2_PUBLIC_URL
   : null;
 
 const nextConfig: NextConfig = {
+  // pg-cloudflare has a "workerd" export condition; listing it here causes
+  // @opennextjs/cloudflare's copyWorkerdPackages to copy the full package
+  // (including dist/index.js) so esbuild can resolve it when bundling for Workers.
+  serverExternalPackages: ["pg", "pg-cloudflare"],
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "cdn.discordapp.com" },
