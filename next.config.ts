@@ -13,7 +13,7 @@ const nextConfig: NextConfig = {
   // would turn the WASM import into a forbidden new WebAssembly.Module() call).
   // Instead, copyWorkerdPackages copies them as-is so wrangler/esbuild can
   // handle the .wasm import as a static module binding (allowed in Workers).
-  serverExternalPackages: ["pg", "pg-cloudflare", "@prisma/client", ".prisma/client"],
+  serverExternalPackages: ["@prisma/client", ".prisma/client"],
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "cdn.discordapp.com" },

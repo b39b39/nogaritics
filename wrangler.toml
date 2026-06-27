@@ -7,9 +7,20 @@ main = ".open-next/worker.js"
 directory = ".open-next/assets"
 binding = "ASSETS"
 
-[[hyperdrive]]
-binding = "HYPERDRIVE"
-id = "d56bbb3bb83741aba3ba69ef4884834f"
-
 [vars]
 AUTH_URL = "https://www.ngritics.com"
+
+[observability]
+enabled = false
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = false
+persist = true
+head_sampling_rate = 1
