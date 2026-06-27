@@ -21,30 +21,43 @@ function createPrismaClient(): PrismaClient {
   // them in an actual transaction. Operations execute sequentially over HTTP;
   // there is no atomicity guarantee, but the operations are idempotent enough
   // that this is safe for our use case.
-  const noopOk = () => Promise.resolve({ ok: true as const, value: undefined as void });
+  //
+  // Prisma's Result<T> must include .map() and .flatMap() methods:
+  //   ok(v) = { ok: true, value: v, map: fn => ok(fn(v)), flatMap: fn => fn(v) }
+  function ok<T>(value: T) {
+    const r: { ok: true; value: T; map: <U>(fn: (v: T) => U) => ReturnType<typeof ok<U>>; flatMap: <U>(fn: (v: T) => U) => U } = {
+      ok: true,
+      value,
+      map: (fn) => ok(fn(value)),
+      flatMap: (fn) => fn(value),
+    };
+    return r;
+  }
+
+  const noopOk = () => Promise.resolve(ok(undefined as void));
+  const adapterName = (http as unknown as Record<string, unknown>).adapterName as string;
+  const provider = (http as unknown as Record<string, unknown>).provider as string;
   const txQueryable = {
-    adapterName: (http as unknown as Record<string, unknown>).adapterName as string,
-    provider: (http as unknown as Record<string, unknown>).provider as string,
+    adapterName,
+    provider,
     queryRaw: http.queryRaw.bind(http),
     executeRaw: http.executeRaw.bind(http),
   };
-  const fakeTxContext = {
+  const fakeTx = ok({
     ...txQueryable,
-    startTransaction: () => Promise.resolve({
-      ok: true as const,
-      value: {
-        ...txQueryable,
-        options: { isolationLevel: "ReadCommitted" as const },
-        commit: noopOk,
-        rollback: noopOk,
-      },
-    }),
-  };
+    options: { isolationLevel: "ReadCommitted" as const },
+    commit: noopOk,
+    rollback: noopOk,
+  });
+  const fakeTxContext = ok({
+    ...txQueryable,
+    startTransaction: () => Promise.resolve(fakeTx),
+  });
 
   const adapter = new Proxy(http, {
     get(target, prop) {
       if (prop === "transactionContext") {
-        return () => Promise.resolve({ ok: true as const, value: fakeTxContext });
+        return () => Promise.resolve(fakeTxContext);
       }
       return (target as unknown as Record<string | symbol, unknown>)[prop];
     },
