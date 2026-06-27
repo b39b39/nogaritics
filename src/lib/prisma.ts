@@ -2,13 +2,10 @@ import { Pool as NeonPool, neonConfig } from "@neondatabase/serverless";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { PrismaClient } from "@prisma/client";
 
-// Workers has native WebSocket; Node.js (local dev/build) needs the ws package
 if (typeof globalThis.WebSocket === "undefined") {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   neonConfig.webSocketConstructor = require("ws");
 }
-
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
 function createPrismaClient(): PrismaClient {
   const connectionString = process.env.DATABASE_URL;
@@ -18,13 +15,17 @@ function createPrismaClient(): PrismaClient {
   return new PrismaClient({ adapter });
 }
 
-// Proxy defers createPrismaClient() until first query — avoids DATABASE_URL
-// error at build time when Next.js imports this module without env vars set.
+// Workers: WebSocket connections in NeonPool are scoped to one request's I/O
+// context and cannot be shared across requests — never cache globally in prod.
+// Dev: cache globally to avoid connection exhaustion on hot reload.
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+
 export const prisma: PrismaClient = new Proxy({} as PrismaClient, {
   get(_, prop) {
-    if (!globalForPrisma.prisma) {
-      globalForPrisma.prisma = createPrismaClient();
-    }
-    return (globalForPrisma.prisma as unknown as Record<string | symbol, unknown>)[prop];
+    const client =
+      process.env.NODE_ENV !== "production"
+        ? (globalForPrisma.prisma ??= createPrismaClient())
+        : createPrismaClient();
+    return (client as unknown as Record<string | symbol, unknown>)[prop];
   },
 });

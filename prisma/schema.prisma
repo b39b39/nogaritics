@@ -60,6 +60,7 @@ model User {
   discordId      String?   @unique
   name           String?
   email          String?   @unique
+  emailVerified  DateTime?
   image          String?
   banner         String?
   username       String?   @unique
