@@ -1,19 +1,25 @@
-import { neon } from "@neondatabase/serverless";
-import { PrismaNeonHTTP } from "@prisma/adapter-neon";
+import { Pool as NeonPool, neonConfig } from "@neondatabase/serverless";
+import { PrismaNeon } from "@prisma/adapter-neon";
 import { PrismaClient } from "@prisma/client";
+
+// Workers has native WebSocket; Node.js (local dev/build) needs the ws package
+if (typeof globalThis.WebSocket === "undefined") {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  neonConfig.webSocketConstructor = require("ws");
+}
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
 function createPrismaClient(): PrismaClient {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) throw new Error("DATABASE_URL is not set");
-  const sql = neon(connectionString);
-  const adapter = new PrismaNeonHTTP(sql);
+  const pool = new NeonPool({ connectionString });
+  const adapter = new PrismaNeon(pool);
   return new PrismaClient({ adapter });
 }
 
-// Proxy ensures createPrismaClient() runs only on first actual query,
-// not at module load time (build-time imports would fail without DATABASE_URL).
+// Proxy defers createPrismaClient() until first query — avoids DATABASE_URL
+// error at build time when Next.js imports this module without env vars set.
 export const prisma: PrismaClient = new Proxy({} as PrismaClient, {
   get(_, prop) {
     if (!globalForPrisma.prisma) {
