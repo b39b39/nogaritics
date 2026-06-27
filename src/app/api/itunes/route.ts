@@ -24,8 +24,8 @@ export async function GET(req: NextRequest) {
     url = `${ITUNES_BASE}/search?term=${encodeURIComponent(term)}&entity=${entity}&country=${country}&limit=${limit}`;
   }
 
-  const res = await fetch(url, { next: { revalidate: 300 } });
-  if (!res.ok) return NextResponse.json({ error: "iTunes API 오류" }, { status: 502 });
+  const res = await fetch(url);
+  if (!res.ok) return NextResponse.json({ error: "iTunes API 오류", status: res.status }, { status: 502 });
 
   const data = await res.json();
   return NextResponse.json(data);
