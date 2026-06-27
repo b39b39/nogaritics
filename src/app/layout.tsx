@@ -7,6 +7,7 @@ import { SessionProvider } from "next-auth/react";
 export const metadata: Metadata = {
   title: { default: "Nogaritics", template: "%s | Nogaritics" },
   description: "Music rating and discovery platform",
+  metadataBase: new URL("https://www.ngritics.com"),
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
