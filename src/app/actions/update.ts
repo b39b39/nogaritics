@@ -55,13 +55,11 @@ export async function updateAlbum(
   if (!canEdit(role)) return { ok: false, error: "권한이 없습니다." };
 
   try {
-    const artistIds = await Promise.all(input.artists.map(resolveArtistId));
-    const artistsWithRole = artistIds.map((id, i) => ({
-      artistId: id,
-      role: input.artists[i].role,
-      note: input.artists[i].note ?? null,
-      showInOverview: input.artists[i].showInOverview ?? true,
-    }));
+    const artistsWithRole: { artistId: string; role: "MAIN" | "FEAT" | "PROD"; note: string | null; showInOverview: boolean }[] = [];
+    for (const a of input.artists) {
+      const artistId = await resolveArtistId(a);
+      artistsWithRole.push({ artistId, role: a.role, note: a.note ?? null, showInOverview: a.showInOverview ?? true });
+    }
 
     const currentAlbum = await prisma.album.findUnique({
       where: { id: albumId },
@@ -251,17 +249,12 @@ export async function updateTrack(
   try {
     const oldTrack = await prisma.track.findUnique({ where: { id }, select: { image: true } });
 
-    const [artistIds, albumId] = await Promise.all([
-      Promise.all(input.artists.map(resolveArtistId)),
-      input.album ? resolveAlbumId(input.album) : null,
-    ]);
-
-    const artistsWithRole = artistIds.map((artistId, i) => ({
-      artistId,
-      role: input.artists[i].role,
-      note: input.artists[i].note ?? null,
-      showInOverview: input.artists[i].showInOverview ?? true,
-    }));
+    const artistsWithRole: { artistId: string; role: "MAIN" | "FEAT" | "PROD"; note: string | null; showInOverview: boolean }[] = [];
+    for (const a of input.artists) {
+      const artistId = await resolveArtistId(a);
+      artistsWithRole.push({ artistId, role: a.role, note: a.note ?? null, showInOverview: a.showInOverview ?? true });
+    }
+    const albumId = input.album ? await resolveAlbumId(input.album) : null;
 
     await prisma.trackArtist.deleteMany({ where: { trackId: id } });
     await prisma.trackTag.deleteMany({ where: { trackId: id } });
