@@ -7,6 +7,9 @@ main = ".open-next/worker.js"
 directory = ".open-next/assets"
 binding = "ASSETS"
 
+[images]
+binding = "IMAGES"
+
 [vars]
 AUTH_URL = "https://www.ngritics.com"
 
