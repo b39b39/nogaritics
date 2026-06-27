@@ -5,14 +5,10 @@ const r2Hostname = process.env.R2_PUBLIC_URL
   : null;
 
 const nextConfig: NextConfig = {
-  // pg-cloudflare has a "workerd" export condition; listing it here causes
-  // @opennextjs/cloudflare's copyWorkerdPackages to copy the full package
-  // (including dist/index.js) so esbuild can resolve it when bundling for Workers.
-  // pg-cloudflare, @prisma/client, .prisma/client all have "workerd" export
-  // conditions; listing them here prevents webpack from bundling them (which
-  // would turn the WASM import into a forbidden new WebAssembly.Module() call).
-  // Instead, copyWorkerdPackages copies them as-is so wrangler/esbuild can
-  // handle the .wasm import as a static module binding (allowed in Workers).
+  // Prisma's WASM query engine must not be bundled by webpack: webpack converts
+  // the .wasm import into a forbidden new WebAssembly.Module() call. Marking
+  // these as external lets copyWorkerdPackages copy them as-is so wrangler
+  // handles the .wasm as a static module binding (allowed in Workers).
   serverExternalPackages: ["@prisma/client", ".prisma/client"],
   images: {
     remotePatterns: [
