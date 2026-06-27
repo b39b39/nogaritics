@@ -9,7 +9,7 @@ export default async function HomePage() {
   const [{ items: recentTracks }, { items: recentAlbums }, counts] = await Promise.all([
     getTracks({ sortBy: "recently", sortOrder: "desc", pageSize: 10, page: 1 }),
     getAlbums({ sortBy: "recently", sortOrder: "desc", pageSize: 10, page: 1 }),
-    prisma.$transaction([
+    Promise.all([
       prisma.track.count(),
       prisma.album.count(),
       prisma.artist.count(),
