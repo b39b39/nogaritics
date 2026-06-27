@@ -49,38 +49,40 @@ export function parseItunesDate(releaseDate: string) {
   };
 }
 
-async function proxyFetch(params: Record<string, string>) {
+const ITUNES = "https://itunes.apple.com";
+
+async function itunesFetch(path: "search" | "lookup", params: Record<string, string>) {
   const qs = new URLSearchParams(params).toString();
-  const res = await fetch(`/api/itunes?${qs}`);
+  const res = await fetch(`${ITUNES}/${path}?${qs}`);
   if (!res.ok) throw new Error("iTunes API 오류");
   return res.json();
 }
 
 export async function itunesSearchTracks(term: string, limit = 15): Promise<ItunesTrack[]> {
-  const data = await proxyFetch({ action: "search", term, entity: "song", limit: String(limit) });
+  const data = await itunesFetch("search", { term, entity: "song", country: "kr", limit: String(limit) });
   return (data.results ?? []).filter((r: ItunesTrack) => r.wrapperType === "track" && r.kind === "song");
 }
 
 export async function itunesSearchAlbums(term: string, limit = 15): Promise<ItunesAlbum[]> {
-  const data = await proxyFetch({ action: "search", term, entity: "album", limit: String(limit) });
+  const data = await itunesFetch("search", { term, entity: "album", country: "kr", limit: String(limit) });
   return (data.results ?? []).filter((r: ItunesAlbum) => r.wrapperType === "collection");
 }
 
 export async function itunesSearchArtists(term: string, limit = 15): Promise<ItunesArtist[]> {
-  const data = await proxyFetch({ action: "search", term, entity: "musicArtist", limit: String(limit) });
+  const data = await itunesFetch("search", { term, entity: "musicArtist", country: "kr", limit: String(limit) });
   return (data.results ?? []).filter((r: ItunesArtist) => r.wrapperType === "artist");
 }
 
 export async function itunesLookupAlbumTracks(collectionId: number): Promise<{ album: ItunesAlbum; tracks: ItunesTrack[] }> {
   for (const country of ["kr", "jp", "us"]) {
-    const data = await proxyFetch({ action: "lookup", id: String(collectionId), entity: "song", country });
+    const data = await itunesFetch("lookup", { id: String(collectionId), entity: "song", country });
     const album = (data.results ?? []).find((r: ItunesAlbum) => r.wrapperType === "collection");
     const tracks = (data.results ?? [])
       .filter((r: ItunesTrack) => r.wrapperType === "track" && r.kind === "song")
       .sort((a: ItunesTrack, b: ItunesTrack) => a.trackNumber - b.trackNumber);
     if (tracks.length > 0) return { album, tracks };
   }
-  const data = await proxyFetch({ action: "lookup", id: String(collectionId), entity: "song", country: "kr" });
+  const data = await itunesFetch("lookup", { id: String(collectionId), entity: "song", country: "kr" });
   const album = (data.results ?? []).find((r: ItunesAlbum) => r.wrapperType === "collection");
   return { album, tracks: [] };
 }
