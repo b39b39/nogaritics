@@ -87,7 +87,6 @@ async function resolveArtistId(a: ArtistInput): Promise<string> {
   if (a.itunesArtistId) {
     const existing = await prisma.artist.findUnique({ where: { itunesArtistId: a.itunesArtistId } });
     if (existing) return existing.id;
-    console.log("[save] artist.create:", a.name);
     const created = await prisma.artist.create({
       data: { name: a.name, image: a.image ?? null, appleMusicUrl: a.appleMusicUrl ?? null, itunesArtistId: a.itunesArtistId },
     });
@@ -117,7 +116,6 @@ async function createMissingTracks(
         continue;
       }
     }
-    console.log("[save] track.create (album track):", t.name);
     const newTrack = await prisma.track.create({
       data: {
         name: t.name,
@@ -131,7 +129,6 @@ async function createMissingTracks(
         albumId,
       },
     });
-    console.log("[save] trackArtist.createMany count:", artistIds.length);
     await prisma.trackArtist.createMany({
       data: artistIds.map(a => ({ trackId: newTrack.id, artistId: a.id, role: a.role })),
     });
@@ -171,7 +168,6 @@ async function resolveAlbumId(
     albumArtistIds = fallbackArtistIds;
   }
 
-  console.log("[save] album.create:", albumInput.name);
   const album = await prisma.album.create({
     data: {
       name: albumInput.name,
@@ -187,19 +183,16 @@ async function resolveAlbumId(
       itunesAlbumId: albumInput.itunesAlbumId,
     },
   });
-  console.log("[save] albumArtist.createMany count:", albumArtistIds.length);
   await prisma.albumArtist.createMany({
     data: albumArtistIds.map(a => ({ albumId: album.id, artistId: a.id, role: a.role })),
   });
   if (albumInput.tagIds?.length) {
-    console.log("[save] albumTag.createMany count:", albumInput.tagIds.length);
     await prisma.albumTag.createMany({
       data: albumInput.tagIds.map(tagId => ({ albumId: album.id, tagId })),
     });
   }
 
   if (albumInput.tracks.length > 0) {
-    console.log("[save] createMissingTracks count:", albumInput.tracks.length);
     await createMissingTracks(album.id, albumInput.tracks, albumArtistIds, skipItunesTrackId);
   }
 
@@ -235,7 +228,6 @@ export async function saveTrack(input: SaveTrackArgs): Promise<{ ok: boolean; id
       if (existing) return { ok: true, id: existing.id };
     }
 
-    console.log("[save] main track.create:", input.name);
     const track = await prisma.track.create({
       data: {
         name: input.name,
@@ -253,12 +245,10 @@ export async function saveTrack(input: SaveTrackArgs): Promise<{ ok: boolean; id
         albumId,
       },
     });
-    console.log("[save] main trackArtist.createMany count:", artistIdsWithRole.length);
     await prisma.trackArtist.createMany({
       data: artistIdsWithRole.map(a => ({ trackId: track.id, artistId: a.id, role: a.role })),
     });
     if (input.tagIds.length) {
-      console.log("[save] main trackTag.createMany count:", input.tagIds.length);
       await prisma.trackTag.createMany({
         data: input.tagIds.map(tagId => ({ trackId: track.id, tagId })),
       });
