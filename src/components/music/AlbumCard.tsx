@@ -16,7 +16,7 @@ export function AlbumCard({ album, layout = "grid" }: AlbumCardProps) {
   if (layout === "list") {
     return (
       <div className="relative flex items-center gap-3 bg-white rounded-xl border border-gray-100 px-3 py-2.5 hover:border-indigo-200 hover:shadow-sm transition-all group">
-        <Link href={`/albums/${album.id}`} className="absolute inset-0 rounded-xl z-0" aria-label={album.name} />
+        <Link href={`/albums/${album.id}`} className="absolute inset-0 rounded-xl z-[1]" aria-label={album.name} />
         <CoverImage src={album.image} alt={album.name} size="sm" />
         <div className="flex-1 min-w-0">
           <div className="truncate">
@@ -49,7 +49,7 @@ export function AlbumCard({ album, layout = "grid" }: AlbumCardProps) {
 
   return (
     <div className="relative group bg-white rounded-xl overflow-hidden border border-gray-100 hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer">
-      <Link href={`/albums/${album.id}`} className="absolute inset-0 z-0" aria-label={album.name} />
+      <Link href={`/albums/${album.id}`} className="absolute inset-0 z-[1]" aria-label={album.name} />
       <CoverImage
         src={album.image}
         alt={album.name}

@@ -61,15 +61,15 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
 
   // Top 5 starred albums with highest personal score
   const starredAlbumRates = await prisma.rate.findMany({
-    where: { userId: user.id, starred: true, score: { not: null }, albumId: { not: null } },
+    where: { userId: user.id, starred: true, albumId: { not: null } },
     include: { album: { include: ALBUM_INCLUDE } },
     orderBy: [{ score: "desc" }, { createdAt: "asc" }],
     take: 5,
   });
 
-  // Top 5 starred tracks with highest personal score
+  // Top 5 starred tracks (scored first, then unscored)
   const starredTrackRates = await prisma.rate.findMany({
-    where: { userId: user.id, starred: true, score: { not: null }, trackId: { not: null } },
+    where: { userId: user.id, starred: true, trackId: { not: null } },
     include: { track: { include: TRACK_INCLUDE } },
     orderBy: [{ score: "desc" }, { createdAt: "asc" }],
     take: 5,

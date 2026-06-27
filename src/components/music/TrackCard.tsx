@@ -13,7 +13,7 @@ interface TrackCardProps {
 export function TrackCard({ track }: TrackCardProps) {
   return (
     <div className="relative flex items-center gap-3 bg-white rounded-xl border border-gray-100 px-3 py-2.5 hover:border-indigo-200 hover:shadow-sm transition-all group">
-      <Link href={`/tracks/${track.id}`} className="absolute inset-0 rounded-xl z-0" aria-label={track.name} />
+      <Link href={`/tracks/${track.id}`} className="absolute inset-0 rounded-xl z-[1]" aria-label={track.name} />
       <CoverImage src={track.image ?? track.album?.image} alt={track.name} size="sm" />
       <div className="flex-1 min-w-0">
         <div className="truncate">
