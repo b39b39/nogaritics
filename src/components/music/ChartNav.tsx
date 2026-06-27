@@ -36,7 +36,7 @@ function ModeToggle({ value, onChange }: { value: "or" | "and"; onChange: (v: "o
           key={m}
           type="button"
           onClick={() => onChange(m)}
-          className={`px-2 py-0.5 text-[10px] font-bold uppercase transition-colors ${value === m ? "bg-indigo-600 text-white" : "text-gray-400 hover:bg-gray-50"}`}
+          className={`px-2 py-0.5 text-[10px] font-bold uppercase transition-colors ${value === m ? "bg-indigo-600 text-white" : "text-gray-400 hover:bg-gray-50"}.svg`}
         >
           {m}
         </button>
@@ -75,7 +75,7 @@ const LABEL_CLS = "flex-shrink-0 w-[76px] text-[11px] font-semibold uppercase tr
 const ROW_CLS = "flex items-center gap-2 py-2.5 border-b border-gray-100 last:border-0 flex-wrap";
 const INPUT_CLS = "px-2.5 py-1.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white";
 const PILL_BTN = (active: boolean) =>
-  `px-3 py-1 rounded-lg text-xs font-medium transition-colors ${active ? "bg-indigo-600 text-white" : "border border-gray-200 text-gray-600 hover:border-indigo-300"}`;
+  `px-3 py-1 rounded-lg text-xs font-medium transition-colors ${active ? "bg-indigo-600 text-white" : "border border-gray-200 text-gray-600 hover:border-indigo-300"}.svg`;
 const CHIP_CLS = "inline-flex items-center gap-1 rounded-full bg-indigo-50 text-indigo-700 px-2 py-0.5 text-xs flex-shrink-0";
 const ADD_BTN_CLS = "flex-shrink-0 px-2.5 py-1.5 rounded-lg border border-dashed border-gray-300 text-xs text-gray-500 hover:border-indigo-400 hover:text-indigo-600 transition-colors";
 
@@ -129,7 +129,7 @@ export function ChartNav({ initial, nations: availableNationCodes }: { initial: 
   const debouncedUserQ = useDebounce(userQuery, 280);
   useEffect(() => {
     if (!debouncedUserQ || debouncedUserQ === userName) { setUserResults([]); return; }
-    fetch(`/api/users/search?q=${encodeURIComponent(debouncedUserQ)}`)
+    fetch(`/api/users/search?q=${encodeURIComponent(debouncedUserQ)}.svg`)
       .then((r) => r.json()).then((d) => setUserResults(d.items ?? [])).catch(() => {});
   }, [debouncedUserQ, userName]);
 
@@ -200,7 +200,7 @@ export function ChartNav({ initial, nations: availableNationCodes }: { initial: 
     if (initial.sortOrder !== "desc") p.set("sortOrder", initial.sortOrder);
     if (initial.pageSize !== "30") p.set("pageSize", initial.pageSize);
     p.set("page", "1");
-    return `/chart?${p.toString()}`;
+    return `/chart?${p.toString()}.svg`;
   }
 
   function push(overrides: Parameters<typeof buildUrl>[0]) {
@@ -303,7 +303,7 @@ export function ChartNav({ initial, nations: availableNationCodes }: { initial: 
                   <span className="flex-1 text-xs truncate">{a.name}</span>
                   {a.nation && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={`/api/flag?code=${a.nation}`} alt={a.nation} width={20} height={14} className="w-5 h-[14px] object-cover rounded-[2px] flex-shrink-0" />
+                    <img src={`/flags/${a.nation}.svg`} alt={a.nation} width={20} height={14} className="w-5 h-[14px] object-cover rounded-[2px] flex-shrink-0" />
                   )}
                 </button>
               ))}
@@ -387,7 +387,7 @@ export function ChartNav({ initial, nations: availableNationCodes }: { initial: 
         {selectedNations.map((code) => (
           <span key={code} className={CHIP_CLS}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`/api/flag?code=${code}`} alt={code} width={16} height={11} className="w-4 h-[11px] object-cover rounded-[2px] flex-shrink-0" />
+            <img src={`/flags/${code}.svg`} alt={code} width={16} height={11} className="w-4 h-[11px] object-cover rounded-[2px] flex-shrink-0" />
             {codeToName[code] ?? code}
             <button
               onClick={() => {

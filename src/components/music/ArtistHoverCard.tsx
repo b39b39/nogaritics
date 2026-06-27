@@ -73,7 +73,7 @@ function Card({
             {data.nation && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={`/api/flag?code=${data.nation}`}
+                src={`/flags/${data.nation}.svg`}
                 alt={data.nation}
                 className="w-4 h-auto rounded-[2px] flex-shrink-0"
               />
@@ -126,7 +126,7 @@ export function ArtistHoverCard({ artistId, children }: Props) {
       let data = previewCache.get(artistId);
       if (!data) {
         try {
-          const res = await fetch(`/api/artists/${artistId}`);
+          const res = await fetch(`/api/artists/${artistId}.svg`);
           if (res.ok) {
             data = await res.json() as ArtistPreview;
             previewCache.set(artistId, data);

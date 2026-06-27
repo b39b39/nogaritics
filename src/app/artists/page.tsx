@@ -66,7 +66,7 @@ export default async function ArtistsPage({ searchParams }: { searchParams: Prom
         <>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             {artists.map((artist) => (
-              <Link key={artist.id} href={`/artists/${artist.id}`} className="group text-center">
+              <Link key={artist.id} href={`/artists/${artist.id}.svg`} className="group text-center">
                 <CoverImage
                   src={artist.image}
                   alt={artist.name}
@@ -77,7 +77,7 @@ export default async function ArtistsPage({ searchParams }: { searchParams: Prom
                 <div className="flex items-center justify-center gap-1">
                   {artist.nation && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={`/api/flag?code=${artist.nation}`} alt={artist.nation} title={artist.nation} width={20} height={14} className="w-5 h-[14px] object-cover rounded-[2px] flex-shrink-0" />
+                    <img src={`/flags/${artist.nation}.svg`} alt={artist.nation} title={artist.nation} width={20} height={14} className="w-5 h-[14px] object-cover rounded-[2px] flex-shrink-0" />
                   )}
                   <p className="font-semibold text-gray-900 text-sm truncate group-hover:text-indigo-600 transition-colors">
                     {artist.name}

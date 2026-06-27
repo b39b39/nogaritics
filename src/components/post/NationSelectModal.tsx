@@ -111,17 +111,17 @@ export function NationSelectModal(props: Props) {
               onClick={() => handleSelect(c.code)}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm ${
                 isSelected(c.code) ? "bg-indigo-50" : ""
-              }`}
+              }.svg`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={`/api/flag?code=${c.code}`}
+                src={`/flags/${c.code}.svg`}
                 alt={c.code}
                 width={24}
                 height={16}
                 className="w-6 h-4 object-cover rounded-[2px] flex-shrink-0"
               />
-              <span className={`flex-1 text-left font-medium ${isSelected(c.code) ? "text-indigo-700" : "text-gray-900"}`}>
+              <span className={`flex-1 text-left font-medium ${isSelected(c.code) ? "text-indigo-700" : "text-gray-900"}.svg`}>
                 {c.name}
               </span>
               <span className="text-xs text-gray-400 font-mono w-6">{c.code}</span>

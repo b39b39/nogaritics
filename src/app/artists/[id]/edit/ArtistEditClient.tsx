@@ -149,7 +149,7 @@ export function ArtistEditClient({ data, countries }: Props) {
         });
 
         if (result.ok) {
-          router.push(`/artists/${data.id}`);
+          router.push(`/artists/${data.id}.svg`);
           router.refresh();
         } else {
           setError(result.error ?? "저장 실패");
@@ -221,7 +221,7 @@ export function ArtistEditClient({ data, countries }: Props) {
               </p>
               {nation && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={`/api/flag?code=${nation}`} alt={nation} className="w-7 h-auto rounded-sm flex-shrink-0" />
+                <img src={`/flags/${nation}.svg`} alt={nation} className="w-7 h-auto rounded-sm flex-shrink-0" />
               )}
             </div>
 
@@ -297,7 +297,7 @@ export function ArtistEditClient({ data, countries }: Props) {
           {nation ? (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={`/api/flag?code=${nation}`} alt={nation} width={20} height={14} className="w-5 h-[14px] object-cover rounded-[2px] flex-shrink-0" />
+              <img src={`/flags/${nation}.svg`} alt={nation} width={20} height={14} className="w-5 h-[14px] object-cover rounded-[2px] flex-shrink-0" />
               <span className="flex-1 text-gray-900">{nationLabel}</span>
               <span className="text-xs text-gray-400 font-mono">{nation}</span>
             </>
@@ -315,10 +315,10 @@ export function ArtistEditClient({ data, countries }: Props) {
         <button
           type="button"
           onClick={() => setIsGroup((v) => !v)}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isGroup ? "bg-indigo-600" : "bg-gray-200"}`}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isGroup ? "bg-indigo-600" : "bg-gray-200"}.svg`}
         >
           <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${isGroup ? "translate-x-6" : "translate-x-1"}`}
+            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${isGroup ? "translate-x-6" : "translate-x-1"}.svg`}
           />
         </button>
         <label className="text-sm font-medium text-gray-700">그룹 아티스트</label>

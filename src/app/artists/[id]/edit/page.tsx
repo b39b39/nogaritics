@@ -1,6 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import fs from "fs";
-import path from "path";
+import { countries } from "country-flag-icons";
 import { prisma } from "@/lib/prisma";
 import { getSessionRole, canEdit } from "@/lib/permissions";
 import { tagInclude } from "@/lib/queries";
@@ -8,12 +7,8 @@ import { ArtistEditClient } from "./ArtistEditClient";
 import type { CountryItem } from "@/components/post/NationSelectModal";
 
 function getAllCountries(): CountryItem[] {
-  const dir = path.join(process.cwd(), "node_modules/country-flag-icons/3x2");
   const regionNames = new Intl.DisplayNames(["ko"], { type: "region" });
-  return fs
-    .readdirSync(dir)
-    .filter((f) => f.endsWith(".svg"))
-    .map((f) => f.replace(".svg", ""))
+  return countries
     .filter((code) => code.length === 2)
     .map((code) => ({ code, name: regionNames.of(code) ?? code }))
     .sort((a, b) => a.name.localeCompare(b.name, "ko"));
