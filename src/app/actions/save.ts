@@ -116,7 +116,7 @@ async function createMissingTracks(
         continue;
       }
     }
-    await prisma.track.create({
+    const newTrack = await prisma.track.create({
       data: {
         name: t.name,
         trackNumber: t.trackNumber ?? null,
@@ -127,8 +127,10 @@ async function createMissingTracks(
         appleMusicUrl: t.appleMusicUrl ?? null,
         itunesTrackId: t.itunesTrackId,
         albumId,
-        artists: { create: artistIds.map(a => ({ artistId: a.id, role: a.role })) },
       },
+    });
+    await prisma.trackArtist.createMany({
+      data: artistIds.map(a => ({ trackId: newTrack.id, artistId: a.id, role: a.role })),
     });
   }
 }
@@ -175,10 +177,16 @@ async function resolveAlbumId(
       youtubeMusicUrl: albumInput.youtubeMusicUrl ?? null,
       soundcloudUrl: albumInput.soundcloudUrl ?? null,
       itunesAlbumId: albumInput.itunesAlbumId,
-      artists: { create: albumArtistIds.map(a => ({ artistId: a.id, role: a.role })) },
-      tags: { create: (albumInput.tagIds ?? []).map(tagId => ({ tagId })) },
     },
   });
+  await prisma.albumArtist.createMany({
+    data: albumArtistIds.map(a => ({ albumId: album.id, artistId: a.id, role: a.role })),
+  });
+  if (albumInput.tagIds?.length) {
+    await prisma.albumTag.createMany({
+      data: albumInput.tagIds.map(tagId => ({ albumId: album.id, tagId })),
+    });
+  }
 
   if (albumInput.tracks.length > 0) {
     await createMissingTracks(album.id, albumInput.tracks, albumArtistIds, skipItunesTrackId);
@@ -196,6 +204,7 @@ export async function saveTrack(input: SaveTrackArgs): Promise<{ ok: boolean; id
   try {
     if (input.itunesTrackId) {
       const existing = await prisma.track.findUnique({ where: { itunesTrackId: input.itunesTrackId } });
+      if (existing) return { ok: true, id: existing.id };
     }
 
     const artistIds = await Promise.all(input.artists.map(resolveArtistId));
@@ -209,6 +218,7 @@ export async function saveTrack(input: SaveTrackArgs): Promise<{ ok: boolean; id
     // Re-check after album cascade (track might have been created inside createMissingTracks)
     if (input.itunesTrackId) {
       const existing = await prisma.track.findUnique({ where: { itunesTrackId: input.itunesTrackId } });
+      if (existing) return { ok: true, id: existing.id };
     }
 
     const track = await prisma.track.create({
@@ -226,10 +236,16 @@ export async function saveTrack(input: SaveTrackArgs): Promise<{ ok: boolean; id
         soundcloudUrl: input.soundcloudUrl,
         itunesTrackId: input.itunesTrackId,
         albumId,
-        artists: { create: artistIdsWithRole.map(a => ({ artistId: a.id, role: a.role })) },
-        tags: { create: input.tagIds.map(tagId => ({ tagId })) },
       },
     });
+    await prisma.trackArtist.createMany({
+      data: artistIdsWithRole.map(a => ({ trackId: track.id, artistId: a.id, role: a.role })),
+    });
+    if (input.tagIds.length) {
+      await prisma.trackTag.createMany({
+        data: input.tagIds.map(tagId => ({ trackId: track.id, tagId })),
+      });
+    }
 
     return { ok: true, id: track.id };
   } catch (e: unknown) {
@@ -244,6 +260,7 @@ export async function saveAlbum(input: SaveAlbumArgs): Promise<{ ok: boolean; id
   try {
     if (input.itunesAlbumId) {
       const existing = await prisma.album.findUnique({ where: { itunesAlbumId: input.itunesAlbumId } });
+      if (existing) return { ok: true, id: existing.id };
     }
 
     const artistIds = await Promise.all(input.artists.map(resolveArtistId));
@@ -262,10 +279,16 @@ export async function saveAlbum(input: SaveAlbumArgs): Promise<{ ok: boolean; id
         youtubeMusicUrl: input.youtubeMusicUrl,
         soundcloudUrl: input.soundcloudUrl,
         itunesAlbumId: input.itunesAlbumId,
-        artists: { create: artistIdsWithRole.map(a => ({ artistId: a.id, role: a.role })) },
-        tags: { create: input.tagIds.map(tagId => ({ tagId })) },
       },
     });
+    await prisma.albumArtist.createMany({
+      data: artistIdsWithRole.map(a => ({ albumId: album.id, artistId: a.id, role: a.role })),
+    });
+    if (input.tagIds.length) {
+      await prisma.albumTag.createMany({
+        data: input.tagIds.map(tagId => ({ albumId: album.id, tagId })),
+      });
+    }
 
     await createMissingTracks(album.id, input.tracks, artistIdsWithRole);
 

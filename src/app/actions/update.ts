@@ -84,10 +84,18 @@ export async function updateAlbum(
         youtubeMusicUrl: input.youtubeMusicUrl,
         appleMusicUrl: input.appleMusicUrl,
         soundcloudUrl: input.soundcloudUrl,
-        artists: { create: artistsWithRole },
-        tags: { create: input.tagIds.map((tagId) => ({ tagId })) },
       },
     });
+    if (artistsWithRole.length) {
+      await prisma.albumArtist.createMany({
+        data: artistsWithRole.map(a => ({ albumId, artistId: a.artistId, role: a.role, note: a.note, showInOverview: a.showInOverview })),
+      });
+    }
+    if (input.tagIds.length) {
+      await prisma.albumTag.createMany({
+        data: input.tagIds.map(tagId => ({ albumId, tagId })),
+      });
+    }
 
     const currentTracks = await prisma.track.findMany({
       where: { albumId },
@@ -122,8 +130,10 @@ export async function updateAlbum(
               itunesTrackId: t.itunesTrackId,
               trackNumber: t.trackNumber,
               albumId,
-              artists: { create: [{ artistId, role: "MAIN" }] },
             },
+          });
+          await prisma.trackArtist.create({
+            data: { trackId: newTrack.id, artistId, role: "MAIN" },
           });
           finalTrackIds.add(newTrack.id);
           continue;
@@ -269,10 +279,18 @@ export async function updateTrack(
         appleMusicUrl: input.appleMusicUrl,
         soundcloudUrl: input.soundcloudUrl,
         albumId,
-        artists: { create: artistsWithRole },
-        tags: { create: input.tagIds.map((tagId) => ({ tagId })) },
       },
     });
+    if (artistsWithRole.length) {
+      await prisma.trackArtist.createMany({
+        data: artistsWithRole.map(a => ({ trackId: id, artistId: a.artistId, role: a.role, note: a.note, showInOverview: a.showInOverview })),
+      });
+    }
+    if (input.tagIds.length) {
+      await prisma.trackTag.createMany({
+        data: input.tagIds.map(tagId => ({ trackId: id, tagId })),
+      });
+    }
 
     if (oldTrack?.image !== input.image) await maybeDeleteR2(oldTrack?.image);
 
@@ -328,14 +346,18 @@ export async function updateArtist(
         youtubeMusicUrl: input.youtubeMusicUrl,
         appleMusicUrl: input.appleMusicUrl,
         soundcloudUrl: input.soundcloudUrl,
-        tags: { create: input.tagIds.map((tagId) => ({ tagId })) },
-        ...(input.isGroup && input.memberIds.length > 0 && {
-          memberEntries: {
-            create: input.memberIds.map((memberId) => ({ memberId })),
-          },
-        }),
       },
     });
+    if (input.tagIds.length) {
+      await prisma.artistTag.createMany({
+        data: input.tagIds.map(tagId => ({ artistId: id, tagId })),
+      });
+    }
+    if (input.isGroup && input.memberIds.length > 0) {
+      await prisma.artistMember.createMany({
+        data: input.memberIds.map(memberId => ({ groupId: id, memberId })),
+      });
+    }
 
     await Promise.all([
       oldArtist?.image !== input.image ? maybeDeleteR2(oldArtist?.image) : Promise.resolve(),
