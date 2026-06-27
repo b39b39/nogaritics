@@ -149,7 +149,7 @@ export function ArtistEditClient({ data, countries }: Props) {
         });
 
         if (result.ok) {
-          router.push(`/artists/${data.id}.svg`);
+          router.push(`/artists/${data.id}`);
           router.refresh();
         } else {
           setError(result.error ?? "저장 실패");
@@ -315,10 +315,10 @@ export function ArtistEditClient({ data, countries }: Props) {
         <button
           type="button"
           onClick={() => setIsGroup((v) => !v)}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isGroup ? "bg-indigo-600" : "bg-gray-200"}.svg`}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isGroup ? "bg-indigo-600" : "bg-gray-200"}`}
         >
           <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${isGroup ? "translate-x-6" : "translate-x-1"}.svg`}
+            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${isGroup ? "translate-x-6" : "translate-x-1"}`}
           />
         </button>
         <label className="text-sm font-medium text-gray-700">그룹 아티스트</label>

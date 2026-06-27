@@ -66,7 +66,7 @@ export default async function ArtistsPage({ searchParams }: { searchParams: Prom
         <>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             {artists.map((artist) => (
-              <Link key={artist.id} href={`/artists/${artist.id}.svg`} className="group text-center">
+              <Link key={artist.id} href={`/artists/${artist.id}`} className="group text-center">
                 <CoverImage
                   src={artist.image}
                   alt={artist.name}

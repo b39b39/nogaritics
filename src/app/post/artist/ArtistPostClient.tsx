@@ -137,7 +137,7 @@ export function ArtistPostClient({ countries }: Props) {
         throw new Error(err.error ?? "오류가 발생했습니다.");
       }
       const artist = await res.json();
-      router.push(`/artists/${artist.id}.svg`);
+      router.push(`/artists/${artist.id}`);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "오류가 발생했습니다.");
       setSubmitting(false);
@@ -305,10 +305,10 @@ export function ArtistPostClient({ countries }: Props) {
         <button
           type="button"
           onClick={() => setIsGroup((v) => !v)}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isGroup ? "bg-indigo-600" : "bg-gray-200"}.svg`}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isGroup ? "bg-indigo-600" : "bg-gray-200"}`}
         >
           <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${isGroup ? "translate-x-6" : "translate-x-1"}.svg`}
+            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${isGroup ? "translate-x-6" : "translate-x-1"}`}
           />
         </button>
         <label className="text-sm font-medium text-gray-700">그룹 아티스트</label>

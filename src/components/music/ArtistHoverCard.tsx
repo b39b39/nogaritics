@@ -126,7 +126,7 @@ export function ArtistHoverCard({ artistId, children }: Props) {
       let data = previewCache.get(artistId);
       if (!data) {
         try {
-          const res = await fetch(`/api/artists/${artistId}.svg`);
+          const res = await fetch(`/api/artists/${artistId}`);
           if (res.ok) {
             data = await res.json() as ArtistPreview;
             previewCache.set(artistId, data);
