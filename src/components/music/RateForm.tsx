@@ -49,7 +49,9 @@ export function RateForm({ targetId, targetType, existingRate }: RateFormProps) 
       });
       if (result.ok) {
         setEditMode(false);
-        router.refresh();
+        // router.refresh() triggers RSC re-fetch which hangs in Workers; use
+        // push to the same page instead (full client navigation, reliable).
+        router.push(`/${targetType}s/${targetId}`);
       }
     });
   }
@@ -64,7 +66,7 @@ export function RateForm({ targetId, targetType, existingRate }: RateFormProps) 
         starred: false,
         _delete: true,
       });
-      if (result.ok) router.refresh();
+      if (result.ok) router.push(`/${targetType}s/${targetId}`);
     });
   }
 

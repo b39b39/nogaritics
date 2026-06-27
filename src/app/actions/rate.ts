@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -35,7 +34,6 @@ export async function toggleStarred(
         create: { userId, albumId: targetId, starred, score: null, comment: null },
       });
     }
-    revalidatePath(`/${targetType}s/${targetId}`);
     return { ok: true };
   } catch {
     return { ok: false };
@@ -73,8 +71,7 @@ export async function submitRate(input: RateInput): Promise<{ ok: boolean; messa
             ? { userId, trackId: targetId }
             : { userId, albumId: targetId },
       });
-      revalidatePath(`/${targetType}s/${targetId}`);
-      return { ok: true, message: "Rating deleted." };
+        return { ok: true, message: "Rating deleted." };
     }
 
     await prisma.rate.upsert({
@@ -83,7 +80,6 @@ export async function submitRate(input: RateInput): Promise<{ ok: boolean; messa
       create: data,
     });
 
-    revalidatePath(`/${targetType}s/${targetId}`);
     return { ok: true, message: "Rating saved!" };
   } catch (err) {
     console.error("submitRate error:", err);

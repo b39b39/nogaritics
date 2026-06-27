@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function Footer() {
   return (
     <footer className="border-t border-gray-200 bg-white mt-auto">
@@ -7,6 +9,9 @@ export function Footer() {
           Nogaritics
         </div>
         <p className="text-xs text-gray-400">wkdska311@naver.com</p>
+        <Link href="/privacy" className="text-xs text-gray-400 hover:text-indigo-600 transition-colors">
+          개인정보처리방침
+        </Link>
       </div>
     </footer>
   );
