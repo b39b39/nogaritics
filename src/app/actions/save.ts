@@ -2,7 +2,6 @@
 
 import { prisma } from "@/lib/prisma";
 import { getSessionRole } from "@/lib/permissions";
-import { revalidatePath } from "next/cache";
 
 // ─── Input types ─────────────────────────────────────────────────────────────
 
@@ -197,7 +196,6 @@ export async function saveTrack(input: SaveTrackArgs): Promise<{ ok: boolean; id
   try {
     if (input.itunesTrackId) {
       const existing = await prisma.track.findUnique({ where: { itunesTrackId: input.itunesTrackId } });
-      if (existing) { revalidatePath("/tracks"); return { ok: true, id: existing.id }; }
     }
 
     const artistIds = await Promise.all(input.artists.map(resolveArtistId));
@@ -211,7 +209,6 @@ export async function saveTrack(input: SaveTrackArgs): Promise<{ ok: boolean; id
     // Re-check after album cascade (track might have been created inside createMissingTracks)
     if (input.itunesTrackId) {
       const existing = await prisma.track.findUnique({ where: { itunesTrackId: input.itunesTrackId } });
-      if (existing) { revalidatePath("/tracks"); return { ok: true, id: existing.id }; }
     }
 
     const track = await prisma.track.create({
@@ -234,7 +231,6 @@ export async function saveTrack(input: SaveTrackArgs): Promise<{ ok: boolean; id
       },
     });
 
-    revalidatePath("/tracks");
     return { ok: true, id: track.id };
   } catch (e: unknown) {
     return { ok: false, error: e instanceof Error ? e.message : "저장 실패" };
@@ -248,7 +244,6 @@ export async function saveAlbum(input: SaveAlbumArgs): Promise<{ ok: boolean; id
   try {
     if (input.itunesAlbumId) {
       const existing = await prisma.album.findUnique({ where: { itunesAlbumId: input.itunesAlbumId } });
-      if (existing) { revalidatePath("/albums"); return { ok: true, id: existing.id }; }
     }
 
     const artistIds = await Promise.all(input.artists.map(resolveArtistId));
@@ -292,7 +287,6 @@ export async function saveAlbum(input: SaveAlbumArgs): Promise<{ ok: boolean; id
       });
     }
 
-    revalidatePath("/albums");
     return { ok: true, id: album.id };
   } catch (e: unknown) {
     return { ok: false, error: e instanceof Error ? e.message : "저장 실패" };

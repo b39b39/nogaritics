@@ -2,8 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { getSessionRole, canEdit } from "@/lib/permissions";
-import { revalidatePath } from "next/cache";
-import { maybeDeleteGCS } from "@/lib/imageCleanup";
+import { maybeDeleteR2 } from "@/lib/imageCleanup";
 import type { SelectedAlbum } from "@/types";
 
 // ─── Album update ─────────────────────────────────────────────────────────────
@@ -70,26 +69,24 @@ export async function updateAlbum(
     });
     if (!currentAlbum) throw new Error("앨범을 찾을 수 없습니다.");
 
-    await prisma.$transaction(async (tx) => {
-      await tx.albumArtist.deleteMany({ where: { albumId } });
-      await tx.albumTag.deleteMany({ where: { albumId } });
-      await tx.album.update({
-        where: { id: albumId },
-        data: {
-          name: input.name,
-          aliases: input.aliases,
-          image: input.image,
-          publishedYear: input.publishedYear,
-          publishedMonth: input.publishedMonth,
-          publishedDay: input.publishedDay,
-          youtubeUrl: input.youtubeUrl,
-          youtubeMusicUrl: input.youtubeMusicUrl,
-          appleMusicUrl: input.appleMusicUrl,
-          soundcloudUrl: input.soundcloudUrl,
-          artists: { create: artistsWithRole },
-          tags: { create: input.tagIds.map((tagId) => ({ tagId })) },
-        },
-      });
+    await prisma.albumArtist.deleteMany({ where: { albumId } });
+    await prisma.albumTag.deleteMany({ where: { albumId } });
+    await prisma.album.update({
+      where: { id: albumId },
+      data: {
+        name: input.name,
+        aliases: input.aliases,
+        image: input.image,
+        publishedYear: input.publishedYear,
+        publishedMonth: input.publishedMonth,
+        publishedDay: input.publishedDay,
+        youtubeUrl: input.youtubeUrl,
+        youtubeMusicUrl: input.youtubeMusicUrl,
+        appleMusicUrl: input.appleMusicUrl,
+        soundcloudUrl: input.soundcloudUrl,
+        artists: { create: artistsWithRole },
+        tags: { create: input.tagIds.map((tagId) => ({ tagId })) },
+      },
     });
 
     const currentTracks = await prisma.track.findMany({
@@ -168,10 +165,8 @@ export async function updateAlbum(
       });
     }
 
-    if (currentAlbum.image !== input.image) await maybeDeleteGCS(currentAlbum.image);
+    if (currentAlbum.image !== input.image) await maybeDeleteR2(currentAlbum.image);
 
-    revalidatePath(`/albums/${albumId}`);
-    revalidatePath("/albums");
     return { ok: true };
   } catch (e: unknown) {
     return { ok: false, error: e instanceof Error ? e.message : "저장 실패" };
@@ -258,33 +253,29 @@ export async function updateTrack(
       showInOverview: input.artists[i].showInOverview ?? true,
     }));
 
-    await prisma.$transaction(async (tx) => {
-      await tx.trackArtist.deleteMany({ where: { trackId: id } });
-      await tx.trackTag.deleteMany({ where: { trackId: id } });
-      await tx.track.update({
-        where: { id },
-        data: {
-          name: input.name,
-          aliases: input.aliases,
-          image: input.image,
-          publishedYear: input.publishedYear,
-          publishedMonth: input.publishedMonth,
-          publishedDay: input.publishedDay,
-          youtubeUrl: input.youtubeUrl,
-          youtubeMusicUrl: input.youtubeMusicUrl,
-          appleMusicUrl: input.appleMusicUrl,
-          soundcloudUrl: input.soundcloudUrl,
-          albumId,
-          artists: { create: artistsWithRole },
-          tags: { create: input.tagIds.map((tagId) => ({ tagId })) },
-        },
-      });
+    await prisma.trackArtist.deleteMany({ where: { trackId: id } });
+    await prisma.trackTag.deleteMany({ where: { trackId: id } });
+    await prisma.track.update({
+      where: { id },
+      data: {
+        name: input.name,
+        aliases: input.aliases,
+        image: input.image,
+        publishedYear: input.publishedYear,
+        publishedMonth: input.publishedMonth,
+        publishedDay: input.publishedDay,
+        youtubeUrl: input.youtubeUrl,
+        youtubeMusicUrl: input.youtubeMusicUrl,
+        appleMusicUrl: input.appleMusicUrl,
+        soundcloudUrl: input.soundcloudUrl,
+        albumId,
+        artists: { create: artistsWithRole },
+        tags: { create: input.tagIds.map((tagId) => ({ tagId })) },
+      },
     });
 
-    if (oldTrack?.image !== input.image) await maybeDeleteGCS(oldTrack?.image);
+    if (oldTrack?.image !== input.image) await maybeDeleteR2(oldTrack?.image);
 
-    revalidatePath(`/tracks/${id}`);
-    revalidatePath("/tracks");
     return { ok: true };
   } catch (e: unknown) {
     return { ok: false, error: e instanceof Error ? e.message : "저장 실패" };
@@ -320,42 +311,37 @@ export async function updateArtist(
   try {
     const oldArtist = await prisma.artist.findUnique({ where: { id }, select: { image: true, banner: true } });
 
-    await prisma.$transaction(async (tx) => {
-      await tx.artistTag.deleteMany({ where: { artistId: id } });
-      await tx.artistMember.deleteMany({ where: { groupId: id } });
-
-      await tx.artist.update({
-        where: { id },
-        data: {
-          name: input.name,
-          aliases: input.aliases,
-          isGroup: input.isGroup,
-          nation: input.nation,
-          image: input.image,
-          banner: input.banner,
-          xUrl: input.xUrl,
-          instagramUrl: input.instagramUrl,
-          youtubeUrl: input.youtubeUrl,
-          youtubeMusicUrl: input.youtubeMusicUrl,
-          appleMusicUrl: input.appleMusicUrl,
-          soundcloudUrl: input.soundcloudUrl,
-          tags: { create: input.tagIds.map((tagId) => ({ tagId })) },
-          ...(input.isGroup && input.memberIds.length > 0 && {
-            memberEntries: {
-              create: input.memberIds.map((memberId) => ({ memberId })),
-            },
-          }),
-        },
-      });
+    await prisma.artistTag.deleteMany({ where: { artistId: id } });
+    await prisma.artistMember.deleteMany({ where: { groupId: id } });
+    await prisma.artist.update({
+      where: { id },
+      data: {
+        name: input.name,
+        aliases: input.aliases,
+        isGroup: input.isGroup,
+        nation: input.nation,
+        image: input.image,
+        banner: input.banner,
+        xUrl: input.xUrl,
+        instagramUrl: input.instagramUrl,
+        youtubeUrl: input.youtubeUrl,
+        youtubeMusicUrl: input.youtubeMusicUrl,
+        appleMusicUrl: input.appleMusicUrl,
+        soundcloudUrl: input.soundcloudUrl,
+        tags: { create: input.tagIds.map((tagId) => ({ tagId })) },
+        ...(input.isGroup && input.memberIds.length > 0 && {
+          memberEntries: {
+            create: input.memberIds.map((memberId) => ({ memberId })),
+          },
+        }),
+      },
     });
 
     await Promise.all([
-      oldArtist?.image !== input.image ? maybeDeleteGCS(oldArtist?.image) : Promise.resolve(),
-      oldArtist?.banner !== input.banner ? maybeDeleteGCS(oldArtist?.banner) : Promise.resolve(),
+      oldArtist?.image !== input.image ? maybeDeleteR2(oldArtist?.image) : Promise.resolve(),
+      oldArtist?.banner !== input.banner ? maybeDeleteR2(oldArtist?.banner) : Promise.resolve(),
     ]);
 
-    revalidatePath(`/artists/${id}`);
-    revalidatePath("/artists");
     return { ok: true };
   } catch (e: unknown) {
     return { ok: false, error: e instanceof Error ? e.message : "저장 실패" };
