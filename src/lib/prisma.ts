@@ -1,25 +1,23 @@
-import { Pool as NeonPool, neonConfig } from "@neondatabase/serverless";
-import { PrismaNeon } from "@prisma/adapter-neon";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool as NeonPool, neon, neonConfig } from "@neondatabase/serverless";
+import { PrismaNeon, PrismaNeonHTTP } from "@prisma/adapter-neon";
 import { PrismaClient } from "@prisma/client";
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
 function createPrismaClient(): PrismaClient {
-  // Cloudflare Workers + Hyperdrive (production)
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) throw new Error("DATABASE_URL is not set");
+
+  // Cloudflare Workers: use Neon HTTP (fetch-based, no TCP/WebSocket hang)
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { getCloudflareContext } = require("@opennextjs/cloudflare");
-    const { env } = getCloudflareContext();
-    if (env?.HYPERDRIVE) {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { Pool } = require("pg");
-      const pool = new Pool({ connectionString: env.HYPERDRIVE.connectionString });
-      const adapter = new PrismaPg(pool);
-      return new PrismaClient({ adapter, log: ["error"] });
-    }
+    getCloudflareContext();
+    const sql = neon(connectionString);
+    const adapter = new PrismaNeonHTTP(sql);
+    return new PrismaClient({ adapter, log: ["error"] });
   } catch {
-    // Not in Cloudflare Workers context (local dev)
+    // Not in Cloudflare Workers (local dev)
   }
 
   // Local dev: NeonDB WebSocket
@@ -27,8 +25,6 @@ function createPrismaClient(): PrismaClient {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     neonConfig.webSocketConstructor = require("ws");
   }
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) throw new Error("DATABASE_URL is not set");
   const pool = new NeonPool({ connectionString });
   const adapter = new PrismaNeon(pool);
   return new PrismaClient({
