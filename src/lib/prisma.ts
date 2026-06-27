@@ -14,7 +14,18 @@ function createPrismaClient(): PrismaClient {
   if (!connectionString) throw new Error("DATABASE_URL is not set");
   const sql = neon(connectionString);
   const adapter = new PrismaNeonHTTP(sql);
-  return new PrismaClient({ adapter });
+  const traced = new Proxy(adapter, {
+    get(target, prop) {
+      if (prop === "transactionContext") {
+        return () => {
+          console.error("[prisma] transactionContext called — stack:", new Error().stack);
+          return Promise.reject(new Error("Transactions are not supported in HTTP mode"));
+        };
+      }
+      return (target as unknown as Record<string | symbol, unknown>)[prop];
+    },
+  });
+  return new PrismaClient({ adapter: traced });
 }
 
 // HTTP adapter is stateless (fetch-based): safe to cache globally in Workers.
