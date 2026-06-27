@@ -53,7 +53,7 @@ export function AlbumSearchModal({ open, onClose, onSelect }: Props) {
           stem
             ? fetch(`/api/albums?q=${encodeURIComponent(stem)}&pageSize=10`).then((r) => r.json())
             : Promise.resolve({ items: [] }),
-          fetch(`/api/itunes?entity=album&term=${encodeURIComponent(q)}&limit=10`).then((r) => r.json()),
+          fetch(`https://itunes.apple.com/search?entity=album&term=${encodeURIComponent(q)}&limit=10`).then((r) => r.json()),
         ]);
 
         // Merge DB results from main + stem, deduplicate

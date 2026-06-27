@@ -58,7 +58,7 @@ export function TrackSearchModal({ open, onClose, onSelect }: Props) {
           stem
             ? fetch(`/api/tracks?q=${encodeURIComponent(stem)}&pageSize=10`).then((r) => r.json())
             : Promise.resolve({ items: [] }),
-          fetch(`/api/itunes?action=search&entity=song&term=${encodeURIComponent(q)}&limit=10`).then((r) => r.json()),
+          fetch(`https://itunes.apple.com/search?entity=song&term=${encodeURIComponent(q)}&limit=10`).then((r) => r.json()),
         ]);
 
         // Merge DB results from main + stem, deduplicate

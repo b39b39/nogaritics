@@ -52,7 +52,7 @@ export function ArtistSearchModal({ open, onClose, onSelect, excludeIds = [] }: 
           stem
             ? fetch(`/api/artists?q=${encodeURIComponent(stem)}&pageSize=10`).then((r) => r.json())
             : Promise.resolve({ items: [] }),
-          fetch(`/api/itunes?entity=musicArtist&term=${encodeURIComponent(q)}&limit=10`).then((r) => r.json()),
+          fetch(`https://itunes.apple.com/search?entity=musicArtist&term=${encodeURIComponent(q)}&limit=10`).then((r) => r.json()),
         ]);
 
         // Merge DB results from main + stem, deduplicate
