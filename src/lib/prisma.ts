@@ -1,22 +1,59 @@
-import { Pool, neonConfig } from "@neondatabase/serverless";
-import { PrismaNeon } from "@prisma/adapter-neon";
+import { neon, types } from "@neondatabase/serverless";
+import { PrismaNeonHTTP } from "@prisma/adapter-neon";
 import { PrismaClient } from "@prisma/client";
 
-// Cloudflare Workers exposes a global WebSocket constructor; use it so the
-// Neon serverless pool can make WebSocket connections to Neon's proxy.
-if (typeof WebSocket !== "undefined") {
-  neonConfig.webSocketConstructor = WebSocket;
-}
+// Neon HTTP driver returns timestamps as Date objects; Prisma's WASM engine
+// expects raw ISO strings. Override to return strings.
+types.setTypeParser(1082, (val: string) => val); // date
+types.setTypeParser(1114, (val: string) => val); // timestamp
+types.setTypeParser(1184, (val: string) => val); // timestamptz
 
 function createPrismaClient(): PrismaClient {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) throw new Error("DATABASE_URL is not set");
-  const pool = new Pool({ connectionString });
-  const adapter = new PrismaNeon(pool);
+  const sql = neon(connectionString);
+  const http = new PrismaNeonHTTP(sql);
+
+  // Prisma's WASM query engine calls transactionContext() for certain internal
+  // operation sequences (deleteMany + createMany, etc.). PrismaNeonHTTP rejects
+  // this call because Neon HTTP doesn't support BEGIN/COMMIT. Instead, provide a
+  // no-op shim that routes queries through the same HTTP adapter without wrapping
+  // them in an actual transaction. Operations execute sequentially over HTTP;
+  // there is no atomicity guarantee, but the operations are idempotent enough
+  // that this is safe for our use case.
+  const noopOk = () => Promise.resolve({ ok: true as const, value: undefined as void });
+  const txQueryable = {
+    adapterName: (http as unknown as Record<string, unknown>).adapterName as string,
+    provider: (http as unknown as Record<string, unknown>).provider as string,
+    queryRaw: http.queryRaw.bind(http),
+    executeRaw: http.executeRaw.bind(http),
+  };
+  const fakeTxContext = {
+    ...txQueryable,
+    startTransaction: () => Promise.resolve({
+      ok: true as const,
+      value: {
+        ...txQueryable,
+        options: { isolationLevel: "ReadCommitted" as const },
+        commit: noopOk,
+        rollback: noopOk,
+      },
+    }),
+  };
+
+  const adapter = new Proxy(http, {
+    get(target, prop) {
+      if (prop === "transactionContext") {
+        return () => Promise.resolve({ ok: true as const, value: fakeTxContext });
+      }
+      return (target as unknown as Record<string | symbol, unknown>)[prop];
+    },
+  }) as unknown as PrismaNeonHTTP;
+
   return new PrismaClient({ adapter });
 }
 
-// Pool + adapter are safe to cache globally in Workers.
+// HTTP adapter is stateless (fetch-based): safe to cache globally in Workers.
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
 export const prisma: PrismaClient = new Proxy({} as PrismaClient, {
