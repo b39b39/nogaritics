@@ -16,7 +16,9 @@ if (typeof WebSocket !== "undefined") {
 const getPerRequestPrisma = cache((): PrismaClient => {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) throw new Error("DATABASE_URL is not set");
-  const pool = new Pool({ connectionString });
+  // max:1 and short idle timeout so connections close quickly after each
+  // request ends, reducing "Network connection lost" cleanup noise.
+  const pool = new Pool({ connectionString, max: 1, idleTimeoutMillis: 100 });
   const adapter = new PrismaNeon(pool);
   return new PrismaClient({ adapter });
 });
